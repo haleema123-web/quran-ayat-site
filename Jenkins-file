@@ -1,1 +1,21 @@
-
+pipeline {
+agent any
+enviroment
+{
+DOCKER_SERVER_IP = '13.60.234.210'
+stages{
+stage('Checkout')
+{
+steps {
+git branch: 'main',url:'https://github.com/haleema123-web/quran-ayat-site'
+}
+}
+stage ('SonarQube Analysis')
+{
+steps{
+withSonarQubeEnv('MySonar')
+{
+sh 'sonar-scannera'
+}
+}
+}}}}
