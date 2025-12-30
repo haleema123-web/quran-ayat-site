@@ -1,21 +1,55 @@
 pipeline {
-agent any
-enviroment
-{
-DOCKER_SERVER_IP = '13.60.234.210'
-stages{
-stage('Checkout')
-{
-steps {
-git branch: 'main',url:'https://github.com/haleema123-web/quran-ayat-site'
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/haleema123-web/quran-ayat-site.git'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                sh 'npm install'  // or mvn, gradle, etc.
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                sh 'npm test'
+            }
+        }
+        
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh 'npm run sonar-scanner'
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                sshagent(credentials: ['your-ssh-credential-id']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ubuntu@13.50.111.1 '
+                            cd /path/to/your/app &&
+                            git pull origin main &&
+                            npm install &&
+                            pm2 restart your-app
+                        '
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        failure {
+            emailext to: 'your-email@example.com',
+                     subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
+                     body: "Check console output at ${env.BUILD_URL}"
+        }
+    }
 }
-}
-stage ('SonarQube Analysis')
-{
-steps{
-withSonarQubeEnv('MySonar')
-{
-sh 'sonar-scannera'
-}
-}
-}}}}
